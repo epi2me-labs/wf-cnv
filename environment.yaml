@@ -1,4 +1,4 @@
-name: epi2melabs-nf-template-workflow
+name: epi2melabs-wf-cnv
 channels:
     - epi2melabs
     - conda-forge
@@ -10,4 +10,14 @@ dependencies:
     - pysam >=0.17.0
     - fastcat
     - epi2melabs
-    - pandas
+    - R
+    - r-base
+    - r-essentials
+    - bioconductor-qdnaseq
+    - samtools
+    - r-argparser
+    - r-remotes
+    - minimap2
+    - r-biocmanager
+    - dominate
+    - ezcharts >=0.2.2
