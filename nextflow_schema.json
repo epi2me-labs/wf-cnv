@@ -42,6 +42,50 @@
                 "fastq"
             ]
         },
+        "qdnaseq_options": {
+            "title": "QDNAseq options",
+            "type": "object",
+            "description": "Define where the pipeline should find input data and save output data.",
+            "properties": {
+                "bin_size": {
+                    "type": "integer",
+                    "default": 500,
+                    "description": "Bin size for QDNAseq",
+                    "enum": [
+                        1,
+                        5,
+                        10,
+                        15,
+                        30,
+                        50,
+                        100,
+                        500,
+                        1000
+                    ]
+                }
+            }
+        },
+        "reference_genome_options": {
+            "title": "Reference genome options",
+            "type": "object",
+            "properties": {
+                "genome": {
+                    "type": "string",
+                    "description": "Genome build.",
+                    "help_text": "Genome build e.g. `--genome hg38`.",
+                    "enum": [
+                        "hg19",
+                        "hg38"
+                    ]
+                },
+                "fasta": {
+                    "type": "string",
+                    "description": "FASTA reference file.",
+                    "help_text": "Full path to FASTA reference file."
+                }
+            },
+            "fa_icon": "fas fa-dna"
+        },
         "meta_data": {
             "title": "Meta Data",
             "type": "object",
@@ -85,6 +129,12 @@
         },
         {
             "$ref": "#/definitions/generic_options"
+        },
+        {
+            "$ref": "#/definitions/qdnaseq_options"
+        },
+        {
+            "$ref": "#/definitions/reference_genome_options"
         }
     ],
     "properties": {
@@ -104,7 +154,7 @@
         },
         "wfversion": {
             "type": "string",
-            "default": "v0.2.0",
+            "default": "v0.0.1",
             "hidden": true
         },
         "monochrome_logs": {
@@ -119,7 +169,7 @@
         }
     },
     "docs": {
-        "intro": "## Introduction\n\nThis section of documentation typically contains an overview of the workflow in terms of motivation\nand bioinformatics methods, listing any key tools or algorithms employed, whilst also describing its\nrange of use-cases and what a suitable input dataset should look like.\n\n",
-        "links": "## Useful links\n\n* [nextflow](https://www.nextflow.io/)\n* [docker](https://www.docker.com/products/docker-desktop)\n* [conda](https://docs.conda.io/en/latest/miniconda.html)\n"
+        "intro": "## Introduction\n\nThe workflow takes FASTQ sequence data, aligns to a reference genome, and uses the R package QDNAseq to call copy number aberrations.\n\nBest practices for human copy number calling are actively being investigated by the ONT applications team, and this workflow puts some of that work into something that can be easily used by our community.\n\nwf-cnv also utilises our new reporting and plotting package [ezcharts](https://github.com/epi2me-labs/ezcharts). This uses python [dominate](https://github.com/Knio/dominate) and an apache [echart](https://echarts.apache.org/en/index.html) api to allow us to make modern, responsive layouts and plots with relative ease.\n\nWith the release of wf-cnv we also include a new ideogram plotting component for ezharts.\n",
+        "links": "## Useful links\n\n\n* [QDNAseq](https://bioconductor.org/packages/release/bioc/html/QDNAseq.html)\n* [nextflow](https://www.nextflow.io/)\n* [docker](https://www.docker.com/products/docker-desktop)\n* [conda](https://docs.conda.io/en/latest/miniconda.html)\n"
     }
 }

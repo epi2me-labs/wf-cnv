@@ -15,24 +15,93 @@ nextflow.enable.dsl = 2
 
 include { fastq_ingress } from './lib/fastqingress'
 
-process summariseReads {
+process concatenateReads {
     // concatenate fastq and fastq.gz in a dir
 
-    label "wftemplate"
+    label params.process_label
     cpus 1
     input:
         tuple path(directory), val(meta)
     output:
-        path "${meta.sample_id}.stats"
+      tuple val(meta.sample_id), val(meta.type), path("${meta.sample_id}.fastq.gz")
+      tuple val(meta.sample_id), path("${meta.sample_id}.stats"), emit: fastqstats
     shell:
     """
-    fastcat -s ${meta.sample_id} -r ${meta.sample_id}.stats -x ${directory} > /dev/null
+    fastcat -s ${meta.sample_id} -r ${meta.sample_id}.stats -x ${directory} > ${meta.sample_id}.fastq
+    gzip ${meta.sample_id}.fastq
     """
+}
+
+process alignment {
+  label params.process_label
+
+  publishDir "${params.out_dir}/BAM", mode: 'copy', pattern: "*"
+
+  input:
+    tuple val(sample_id), val(type), file(fastq)
+    file reference
+
+  output:
+    tuple val(sample_id), val(type), path("${sample_id}.bam"), path("${sample_id}.bam.bai")
+
+  """
+  minimap2 -ax map-ont ${reference} ${fastq} | samtools sort -o ${sample_id}.bam
+  samtools index ${sample_id}.bam
+  """
+}
+
+
+process callCNV {
+  label params.process_label
+
+  publishDir "${params.out_dir}/qdna_seq", mode: 'copy', pattern: "*"
+
+  input:
+    tuple val(sample_id), val(type), file(bam), file(bai)
+
+  output:
+    tuple val(sample_id), val(type), path("${sample_id}_combined.bed"), path("${sample_id}*"), path("${sample_id}_noise_plot.png"), path("${sample_id}_isobar_plot.png")
+
+  script:
+  """
+  run_qdnaseq.r --bam ${bam} --out_prefix ${sample_id} --binsize ${params.bin_size} --reference ${params.genome}
+  cut -f5 ${sample_id}_calls.bed | paste ${sample_id}_bins.bed - > ${sample_id}_combined.bed
+  """
+}
+
+
+process makeReport {
+  publishDir "${params.out_dir}/qdna_seq", mode: 'copy', pattern: "*"
+
+  label params.process_label
+
+  input:
+    tuple val(sample_id), path(read_stats), val(type), path(cnv_calls), val(cnv_files), path(noise_plot), path(isobar_plot)
+    path "versions/*"
+    path "params.json"
+  output:
+    path("${sample_id}_wf-cnv-report.html")
+
+  script:
+  """
+  cnv_plot.py \
+    -q ${cnv_calls} \
+    -o ${sample_id}_wf-cnv-report.html \
+    --read_stats ${read_stats}\
+    --params params.json \
+    --versions versions \
+    --bin_size ${params.bin_size} \
+    --genome ${params.genome} \
+    --sample_id ${sample_id} \
+    --noise_plot ${noise_plot} \
+    --isobar_plot ${isobar_plot}
+  """
+
 }
 
 
 process getVersions {
-    label "wftemplate"
+    label params.process_label
     cpus 1
     output:
         path "versions.txt"
@@ -40,12 +109,16 @@ process getVersions {
     """
     python -c "import pysam; print(f'pysam,{pysam.__version__}')" >> versions.txt
     fastcat --version | sed 's/^/fastcat,/' >> versions.txt
+    R --version | grep -w R | grep version | cut -f3 -d" " | sed 's/^/R,/' >> versions.txt
+    minimap2 --version | sed 's/^/minimap2,/' >> versions.txt
+    samtools --version | head -n 1 | sed 's/ /,/' >> versions.txt
+    R --slave -e 'packageVersion("QDNAseq")' | cut -d\\' -f2 | sed 's/^/QDNAseq,/' >> versions.txt
     """
 }
 
 
 process getParams {
-    label "wftemplate"
+    label params.process_label
     cpus 1
     output:
         path "params.json"
@@ -58,35 +131,12 @@ process getParams {
 }
 
 
-process makeReport {
-    label "wftemplate"
-    input:
-        val metadata
-        path "seqs.txt"
-        path "versions/*"
-        path "params.json"
-    output:
-        path "wf-template-*.html"
-    script:
-        report_name = "wf-template-" + params.report_name + '.html'
-        def metadata = new JsonBuilder(metadata).toPrettyString()
-    """
-    echo '${metadata}' > metadata.json
-    report.py $report_name \
-        --versions versions \
-        seqs.txt \
-        --params params.json \
-        --metadata metadata.json
-    """
-}
-
-
 // See https://github.com/nextflow-io/nextflow/issues/1636
 // This is the only way to publish files from a workflow whilst
 // decoupling the publish from the process steps.
 process output {
     // publish inputs to output directory
-    label "wftemplate"
+    label params.process_label
     publishDir "${params.out_dir}", mode: 'copy', pattern: "*"
     input:
         path fname
@@ -102,14 +152,25 @@ process output {
 workflow pipeline {
     take:
         reads
+        reference
     main:
-        summary = summariseReads(reads)
+
         software_versions = getVersions()
         workflow_params = getParams()
-        metadata = reads.map { it -> return it[1] }.toList()
-        report = makeReport(metadata, summary, software_versions.collect(), workflow_params)
+
+        sample_fastqs = concatenateReads(reads)
+
+        alignment = alignment(sample_fastqs[0], reference)
+
+        cnvs = callCNV(alignment)
+
+        join_ch = sample_fastqs.fastqstats.join(cnvs.groupTuple())
+        //join_ch.view()
+
+        report = makeReport(join_ch, software_versions.collect(), workflow_params)
+
     emit:
-        results = summary.concat(report, workflow_params)
+        results = report.concat(workflow_params)
         // TODO: use something more useful as telemetry
         telemetry = workflow_params
 }
@@ -117,12 +178,27 @@ workflow pipeline {
 
 // entrypoint workflow
 WorkflowMain.initialise(workflow, params, log)
+
+valid_bin_sizes = [1, 5, 10, 15, 30, 50, 100, 500, 1000]
+valid_genomes = ["hg19", "hg38"]
+
+
 workflow {
 
     if (params.disable_ping == false) {
         Pinguscript.ping_post(workflow, "start", "none", params.out_dir, params)
     }
-    
+
+    if (!valid_bin_sizes.any { it == params.bin_size}) {
+      log.error "`--bin-size` should be one of: $valid_bin_sizes"
+      exit 1
+    }
+
+    if (!valid_genomes.any { it == params.genome}) {
+     log.error "`--genome` should be one of: $valid_genomes"
+     exit 1
+   }
+
     samples = fastq_ingress([
         "input":params.fastq,
         "sample":params.sample,
@@ -130,15 +206,21 @@ workflow {
         "sanitize": params.sanitize_fastq,
         "output":params.out_dir])
 
-    pipeline(samples)
+    if (params.fasta) {
+      reference_fasta = file(params.fasta, checkIfExists: true)
+    } else {
+      exit 1, 'Fasta file not specified!'
+    }
+
+    pipeline(samples, reference_fasta)
     output(pipeline.out.results)
-} 
+}
 
 if (params.disable_ping == false) {
     workflow.onComplete {
         Pinguscript.ping_post(workflow, "end", "none", params.out_dir, params)
     }
-    
+
     workflow.onError {
         Pinguscript.ping_post(workflow, "error", "$workflow.errorMessage", params.out_dir, params)
     }
