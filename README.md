@@ -1,8 +1,6 @@
-# Workflow template
+# wf-cnv
 
 This repository contains a [nextflow](https://www.nextflow.io/) workflow for carrying out copy number analysis.
-
-> This workflow is not intended to be used by end users.
 ## Introduction
 
 The workflow takes FASTQ sequence data, aligns to a reference genome, and uses the R package QDNAseq to call copy number aberrations.
