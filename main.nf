@@ -34,6 +34,7 @@ process concatenateReads {
 
 process alignment {
   label params.process_label
+  cpus 8
 
   publishDir "${params.out_dir}/BAM", mode: 'copy', pattern: "*"
 
@@ -45,7 +46,7 @@ process alignment {
     tuple val(sample_id), val(type), path("${sample_id}.bam"), path("${sample_id}.bam.bai")
 
   """
-  minimap2 -ax map-ont ${reference} ${fastq} | samtools sort -o ${sample_id}.bam
+  minimap2 -t ${task.cpus} -ax map-ont ${reference} ${fastq} | samtools sort -o ${sample_id}.bam
   samtools index ${sample_id}.bam
   """
 }
@@ -188,6 +189,11 @@ workflow {
     if (params.disable_ping == false) {
         Pinguscript.ping_post(workflow, "start", "none", params.out_dir, params)
     }
+
+     if (workflow.profile == "conda") {
+       log.error "conda is not supported by this workflow"
+       exit 1
+     }
 
     if (!valid_bin_sizes.any { it == params.bin_size}) {
       log.error "`--bin-size` should be one of: $valid_bin_sizes"

@@ -6,3 +6,10 @@ include:
 variables:
     NF_WORKFLOW_OPTS: "--fastq test_data/fastq/barcode01/reads.fastq.gz --fasta test_data/fasta/chr21.fa.gz --genome hg38 --bin_size 500"
     CI_FLAVOUR: "new"
+
+conda-run:
+    stage: post-test
+    script:
+      - echo "conda disabled for wf-cnv"
+    rules:
+      - if: ($CI_FLAVOUR == "classic" && $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "dev-template")
