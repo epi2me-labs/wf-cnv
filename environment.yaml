@@ -21,3 +21,4 @@ dependencies:
     - r-biocmanager
     - dominate
     - ezcharts >=0.2.2
+    - ucsc-fasize
