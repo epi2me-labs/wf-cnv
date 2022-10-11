@@ -22,6 +22,7 @@ process concatenateReads {
     cpus 1
     input:
         tuple path(directory), val(meta)
+        val(genome)
     output:
       tuple val(meta.sample_id), val(meta.type), path("${meta.sample_id}.fastq.gz")
       tuple val(meta.sample_id), path("${meta.sample_id}.stats"), emit: fastqstats
@@ -70,6 +71,23 @@ process callCNV {
   """
 }
 
+process checkFASTA {
+    label params.process_label
+
+    input:
+      file(reference)
+    output:
+      path("${reference}_genome.txt")
+      path("output.txt"), emit: genome_label optional true
+
+    script:
+    """
+    faSize -detailed -tab ${reference} > ${reference}_genome.txt
+    check_fasta.py --chr_counts ${reference}_genome.txt --genome ${params.genome} -o output.txt
+    """
+}
+
+//
 
 process makeReport {
   publishDir "${params.out_dir}/qdna_seq", mode: 'copy', pattern: "*"
@@ -99,7 +117,6 @@ process makeReport {
   """
 
 }
-
 
 process getVersions {
     label params.process_label
@@ -156,17 +173,20 @@ workflow pipeline {
         reference
     main:
 
+        genome = checkFASTA(reference)
+        
+        genome_match_channel = genome.genome_label.ifEmpty{exit 1, log.error('Reference FASTA and selected genome do not match')}
+
         software_versions = getVersions()
         workflow_params = getParams()
 
-        sample_fastqs = concatenateReads(reads)
+        sample_fastqs = concatenateReads(reads, genome.genome_label)
 
         alignment = alignment(sample_fastqs[0], reference)
 
         cnvs = callCNV(alignment)
 
         join_ch = sample_fastqs.fastqstats.join(cnvs.groupTuple())
-        //join_ch.view()
 
         report = makeReport(join_ch, software_versions.collect(), workflow_params)
 

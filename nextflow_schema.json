@@ -81,10 +81,15 @@
                 "fasta": {
                     "type": "string",
                     "description": "FASTA reference file.",
+                    "format": "path",
                     "help_text": "Full path to FASTA reference file."
                 }
             },
-            "fa_icon": "fas fa-dna"
+            "fa_icon": "fas fa-dna",
+            "required": [
+                "fasta",
+                "genome"
+            ]
         },
         "meta_data": {
             "title": "Meta Data",
@@ -154,7 +159,7 @@
         },
         "wfversion": {
             "type": "string",
-            "default": "v0.0.1",
+            "default": "v0.0.2",
             "hidden": true
         },
         "monochrome_logs": {
