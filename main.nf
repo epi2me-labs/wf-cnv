@@ -35,7 +35,7 @@ process concatenateReads {
 
 process alignment {
   label params.process_label
-  cpus 8
+  cpus params.map_threads
 
   publishDir "${params.out_dir}/BAM", mode: 'copy', pattern: "*"
 
@@ -174,7 +174,7 @@ workflow pipeline {
     main:
 
         genome = checkFASTA(reference)
-        
+
         genome_match_channel = genome.genome_label.ifEmpty{exit 1, log.error('Reference FASTA and selected genome do not match')}
 
         software_versions = getVersions()
