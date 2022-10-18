@@ -90,8 +90,6 @@ process checkFASTA {
 //
 
 process makeReport {
-  publishDir "${params.out_dir}/qdna_seq", mode: 'copy', pattern: "*"
-
   label params.process_label
 
   input:
