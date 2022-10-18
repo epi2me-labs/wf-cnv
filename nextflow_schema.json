@@ -109,7 +109,7 @@
                 },
                 "disable_ping": {
                     "type": "boolean",
-                    "default": "false",
+                    "default": false,
                     "description": "Enable to prevent sending a workflow ping."
                 }
             }
@@ -164,7 +164,7 @@
         },
         "wfversion": {
             "type": "string",
-            "default": "v0.0.2",
+            "default": "v0.0.3",
             "hidden": true
         },
         "monochrome_logs": {
