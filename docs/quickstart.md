@@ -4,11 +4,8 @@ The workflow uses [nextflow](https://www.nextflow.io/) to manage compute and
 software resources, as such nextflow will need to be installed before attempting
 to run the workflow.
 
-The workflow can currently be run using either
-[Docker](https://www.docker.com/products/docker-desktop) or
-[conda](https://docs.conda.io/en/latest/miniconda.html) to provide isolation of
-the required software. Both methods are automated out-of-the-box provided
-either docker or conda is installed.
+The workflow can currently be run using [Docker](https://www.docker.com/products/docker-desktop) to provide isolation of
+the required software. This is automated out-of-the-box provided docker is installed.
 
 It is not required to clone or download the git repository in order to run the workflow.
 For more information on running EPI2ME Labs workflows [visit out website](https://labs.epi2me.io/wfindex).
@@ -29,7 +26,7 @@ Example command:
 nextflow run epi2me-labs/wf-cnv --fastq <PATH_TO_FASTQS> --fasta <PATH_TO_REFERENCE> --genome <hg19|hg38> --bin_size <BIN_SIZE>
 ```
 
-The FASTQs for three test samples are available [here](https://github.com/epi2me-labs/wf-cnv/test_data/fastq) and can be used with the the accompanying sample sheet from [here](https://github.com/epi2me-labs/wf-cnv/test_data/sample_sheet.csv).
+The FASTQs for three test samples are available [here](https://github.com/epi2me-labs/wf-cnv/tree/master/test_data/fastq) and can be used with the the accompanying sample sheet from [here](https://github.com/epi2me-labs/wf-cnv/blob/master/test_data/sample_sheet.csv).
 
 Example command with test data:
 

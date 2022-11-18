@@ -11,7 +11,7 @@ from ezcharts.components.theme import LAB_head_resources
 from ezcharts.layout.snippets import DataTable
 from ezcharts.layout.snippets import Stats
 from ezcharts.plots import Plot, util
-import ezcharts.plots.ideogram as id
+import ezcharts.plots.ideogram as ideo
 import pandas as pd
 from pkg_resources import resource_filename
 
@@ -131,7 +131,7 @@ def process_qdna(qdnaseq_results):
     return d, dict_of_calls
 
 
-def process_fastcat(fastcat_file: str) -> pd.DataFrame:
+def process_fastcat(fastcat_file):
     """Load fastcat results into dataframe."""
     d = pd.read_csv(
         fastcat_file, sep="\t", header=0)
@@ -139,7 +139,7 @@ def process_fastcat(fastcat_file: str) -> pd.DataFrame:
     return d
 
 
-def process_chr_sizes(genome: str = 'hg19') -> pd.DataFrame:
+def process_chr_sizes(genome):
     """Load the chromosome sizes."""
     s = f"data/reference/{genome}/{genome}.chrom.sizes.gz"
     sizes = pd.read_csv(
@@ -154,7 +154,7 @@ def process_chr_sizes(genome: str = 'hg19') -> pd.DataFrame:
     return sizes
 
 
-def process_images(images: list = []) -> list:
+def process_images(images):
     """Take a list of images and make into base64."""
     result = []
     for image in images:
@@ -205,9 +205,9 @@ def read_length_plot(read_lengths):
 
 
 def copy_number_plot(
-        df_smoothed_read_counts: pd.DataFrame,
-        chr_sizes: pd.DataFrame,
-        style: str = "scatter") -> Plot:
+        df_smoothed_read_counts,
+        chr_sizes,
+        style):
     """Create example plot."""
     # We need to set up a lot of lists!!
     plt = Plot()
@@ -219,7 +219,7 @@ def copy_number_plot(
     master_dataset_index = 0
     show = True
     # type = 'slider'
-    map = list()
+    map_cnv = list()
     # datazooms = list()
     xindexes = list()
     chromosomes = df_smoothed_read_counts.chr.unique()
@@ -306,7 +306,7 @@ def copy_number_plot(
             datasetIndex=master_dataset_index
         ))
 
-        map.append(dict(
+        map_cnv.append(dict(
             left='right',
             show=False,
             min=-1,
@@ -332,7 +332,7 @@ def copy_number_plot(
         # increment our dataset index
         master_dataset_index += 1
 
-    plt.visualMap = map
+    plt.visualMap = map_cnv
     plt.grid = grid
     plt.xAxis = xaxis
     plt.yAxis = yaxis
@@ -341,16 +341,16 @@ def copy_number_plot(
 
 
 def make_report(
-        read_lengths: pd.DataFrame,
-        chr_sizes: pd.DataFrame,
-        df_smoothed_read_counts: pd.DataFrame,
-        chr_calls: pd.DataFrame,
-        genetic_sex: str,
-        bin_size: int,
-        params: str,
-        versions: str,
-        genome: str,
-        images: list,
+        read_lengths,
+        chr_sizes,
+        df_smoothed_read_counts,
+        chr_calls,
+        genetic_sex,
+        bin_size,
+        params,
+        versions,
+        genome,
+        images,
         args):
     """Layout all the compeonets of the report."""
     report = LabsReport(
@@ -381,23 +381,23 @@ def make_report(
                     for copies, cnv_call in conversion.items():
                         cell = td()
                         count = 0
-                        for chr, call in chr_calls.items():
+                        for chrom, call in chr_calls.items():
                             if call == cnv_call:
                                 count += 1
                                 if call > 0:
                                     cell.add(
                                         span(
-                                            chr,
+                                            chrom,
                                             cls="badge bg-danger"))
                                 elif call < 0:
                                     cell.add(
                                         span(
-                                            chr,
+                                            chrom,
                                             cls="badge bg-primary"))
                                 else:
                                     cell.add(
                                         span(
-                                            chr,
+                                            chrom,
                                             cls="badge bg-light text-dark"))
                         if count == 0:
                             cell.add("-")
@@ -457,7 +457,7 @@ def make_report(
         bands_df['chr'] = bands_df['chr'].str.replace('chr', '')
 
         EZChart(
-            id.ideogram(
+            ideo.ideogram(
                 blocks=[bands_df, cnv_data],
                 track=track_data,
                 genome=genome),
@@ -535,10 +535,9 @@ def main():
     df_smoothed_read_counts, chr_calls = process_qdna(args.qdnaseq_results)
     genetic_sex = call_genetic_sex(chr_calls)
     read_lengths = process_fastcat(args.read_stats)
-    chr_sizes = process_chr_sizes()
+    chr_sizes = process_chr_sizes(args.genome)
     images = process_images([args.isobar_plot, args.noise_plot])
 
-    print(chr_calls)
     report = make_report(
         read_lengths,
         chr_sizes,
