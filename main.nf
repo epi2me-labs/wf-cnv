@@ -17,7 +17,6 @@ include { fastq_ingress } from './lib/fastqingress'
 
 process concatenateReads {
     // concatenate fastq and fastq.gz in a dir
-
     label params.process_label
     cpus 1
     input:
@@ -36,9 +35,7 @@ process concatenateReads {
 process alignment {
   label params.process_label
   cpus params.map_threads
-
   publishDir "${params.out_dir}/BAM", mode: 'copy', pattern: "*"
-
   input:
     tuple val(sample_id), val(type), file(fastq)
     file reference
@@ -55,9 +52,8 @@ process alignment {
 
 process callCNV {
   label params.process_label
-
+  cpus 1
   publishDir "${params.out_dir}/qdna_seq", mode: 'copy', pattern: "*"
-
   input:
     tuple val(sample_id), val(type), file(bam), file(bai)
 
@@ -73,7 +69,7 @@ process callCNV {
 
 process checkFASTA {
     label params.process_label
-
+    cpus 1
     input:
       file(reference)
     output:
@@ -91,14 +87,13 @@ process checkFASTA {
 
 process makeReport {
   label params.process_label
-
+  cpus 1
   input:
     tuple val(sample_id), path(read_stats), val(type), path(cnv_calls), val(cnv_files), path(noise_plot), path(isobar_plot)
     path "versions/*"
     path "params.json"
   output:
     path("${sample_id}_wf-cnv-report.html")
-
   script:
   """
   cnv_plot.py \
@@ -228,8 +223,8 @@ workflow {
         "sample":params.sample,
         "sample_sheet":params.sample_sheet])
 
-    if (params.fasta) {
-      reference_fasta = file(params.fasta, checkIfExists: true)
+    if (params.reference) {
+      reference_fasta = file(params.reference, checkIfExists: true)
     } else {
       exit 1, 'Fasta file not specified!'
     }
