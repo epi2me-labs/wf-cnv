@@ -18,8 +18,8 @@ The workflow uses [nextflow](https://www.nextflow.io/) to manage compute and
 software resources, as such nextflow will need to be installed before attempting
 to run the workflow.
 
-The workflow can currently be run using [Docker](https://www.docker.com/products/docker-desktop) to provide isolation of
-the required software. This is automated out-of-the-box provided docker is installed.
+The workflow can currently be run using either [Docker](https://www.docker.com/products/docker-desktop) or [Singularity](https://sylabs.io/singularity/) to provide isolation of the required software. Both methods are automated out-of-the-box provided either Docker or Singularity is installed.
+
 
 It is not required to clone or download the git repository in order to run the workflow.
 For more information on running EPI2ME Labs workflows [visit out website](https://labs.epi2me.io/wfindex).
@@ -66,7 +66,7 @@ The primary outputs of the workflow include, per sample:
 * [QDNAseq](https://bioconductor.org/packages/release/bioc/html/QDNAseq.html)
 * [nextflow](https://www.nextflow.io/)
 * [docker](https://www.docker.com/products/docker-desktop)
-* [conda](https://docs.conda.io/en/latest/miniconda.html)
+* [singularity](https://sylabs.io/singularity/)
 
 **Reference**
 
