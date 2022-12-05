@@ -1,7 +1,7 @@
 ## Quickstart
 
-The workflow uses [nextflow](https://www.nextflow.io/) to manage compute and
-software resources, as such nextflow will need to be installed before attempting
+The workflow uses [Nextflow](https://www.nextflow.io/) to manage compute and
+software resources, and as such Nextflow will need to be installed before attempting
 to run the workflow.
 
 The workflow can currently be run using either [Docker](https://www.docker.com/products/docker-desktop) or [Singularity](https://sylabs.io/singularity/) to provide isolation of the required software. Both methods are automated out-of-the-box provided either Docker or Singularity is installed.
