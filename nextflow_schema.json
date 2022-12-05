@@ -2,7 +2,7 @@
     "$schema": "http://json-schema.org/draft-07/schema",
     "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
     "title": "epi2me-labs/wf-cnv",
-    "description": "Copy number calling workflow.",
+    "description": "Copy number variant calling in human samples.",
     "demo_url": "https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-cnv/wf-cnv-demo.tar.gz",
     "url": "https://github.com/epi2me-labs/wf-cnv",
     "type": "object",
@@ -170,7 +170,7 @@
         },
         "wfversion": {
             "type": "string",
-            "default": "v0.0.5",
+            "default": "v0.0.6",
             "hidden": true
         },
         "monochrome_logs": {
@@ -185,7 +185,7 @@
         }
     },
     "docs": {
-        "intro": "## Introduction\n\nThe workflow takes FASTQ sequence data, aligns to a reference genome, and uses the R package QDNAseq to call copy number aberrations.\n\nBest practices for human copy number calling are actively being investigated by the ONT applications team, and this workflow puts some of that work into something that can be easily used by our community.\n\nwf-cnv also utilises our new reporting and plotting package [ezcharts](https://github.com/epi2me-labs/ezcharts). This uses python [dominate](https://github.com/Knio/dominate) and an apache [echart](https://echarts.apache.org/en/index.html) API to allow us to make modern, responsive layouts and plots with relative ease.\n\nWith the release of wf-cnv we also include a new ideogram plotting component for ezcharts.\n",
-        "links": "## Useful links\n\n\n* [QDNAseq](https://bioconductor.org/packages/release/bioc/html/QDNAseq.html)\n* [nextflow](https://www.nextflow.io/)\n* [docker](https://www.docker.com/products/docker-desktop)\n* [singularity](https://sylabs.io/singularity/)\n\n**Reference**\n\nScheinin I, Sie D, Bengtsson H, van de Wiel MA, Olshen AB, van Thuijl HF, van Essen HF, Eijk PP, Rustenburg F, Meijer GA, Reijneveld JC, Wesseling P, Pinkel D, Albertson DG, Ylstra B. DNA copy number analysis of fresh and formalin-fixed specimens by shallow whole-genome sequencing with identification and exclusion of problematic regions in the genome assembly. Genome Res. 2014 Dec;24(12):2022-32. doi: 10.1101/gr.175141.114. Epub 2014 Sep 18. [PMCID](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4248318/)\n"
+        "intro": "## Introduction\n\nThe workflow takes FASTQ sequence data, aligns to a reference genome, and uses the R package QDNAseq to call copy number aberrations.\n\nBest practices for human copy number calling are actively being investigated by the ONT applications team, and this workflow puts some of that work into something that can be easily used by our community.\n\nwf-cnv also utilises our new reporting and plotting package [ezcharts](https://github.com/epi2me-labs/ezcharts). This uses python [dominate](https://github.com/Knio/dominate) and an apache [echart](https://echarts.apache.org/en/index.html) API to allow us to make modern, responsive layouts and plots with relative ease.\n",
+        "links": "## Useful links\n\n\n* [QDNAseq](https://bioconductor.org/packages/release/bioc/html/QDNAseq.html)\n* [Nextflow](https://www.nextflow.io/)\n* [Docker](https://www.docker.com/products/docker-desktop)\n* [Singularity](https://sylabs.io/singularity/)\n\n**Reference**\n\nScheinin I, Sie D, Bengtsson H, van de Wiel MA, Olshen AB, van Thuijl HF, van Essen HF, Eijk PP, Rustenburg F, Meijer GA, Reijneveld JC, Wesseling P, Pinkel D, Albertson DG, Ylstra B. DNA copy number analysis of fresh and formalin-fixed specimens by shallow whole-genome sequencing with identification and exclusion of problematic regions in the genome assembly. Genome Res. 2014 Dec;24(12):2022-32. doi: 10.1101/gr.175141.114. Epub 2014 Sep 18. [PMCID](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4248318/)\n"
     }
 }

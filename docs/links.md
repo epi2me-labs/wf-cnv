@@ -2,9 +2,9 @@
 
 
 * [QDNAseq](https://bioconductor.org/packages/release/bioc/html/QDNAseq.html)
-* [nextflow](https://www.nextflow.io/)
-* [docker](https://www.docker.com/products/docker-desktop)
-* [singularity](https://sylabs.io/singularity/)
+* [Nextflow](https://www.nextflow.io/)
+* [Docker](https://www.docker.com/products/docker-desktop)
+* [Singularity](https://sylabs.io/singularity/)
 
 **Reference**
 
