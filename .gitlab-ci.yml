@@ -5,6 +5,7 @@ include:
 
 variables:
     NF_WORKFLOW_OPTS: "--fastq test_data/fastq/barcode01/reads.fastq.gz --reference test_data/fasta/chr21.fa.gz --genome hg38 --bin_size 500 --map_threads 4"
+    NF_IGNORE_PROCESSES: "bamStats,callCNV_bam,samtools_index"
     CI_FLAVOUR: "new"
 
 conda-run:

@@ -14,6 +14,7 @@ import groovy.json.JsonBuilder
 nextflow.enable.dsl = 2
 
 include { fastq_ingress } from './lib/fastqingress'
+include { sample_ingress } from './lib/ingress'
 
 process concatenateReads {
     // concatenate fastq and fastq.gz in a dir
@@ -24,7 +25,7 @@ process concatenateReads {
         val(genome)
     output:
       tuple val(meta.sample_id), val(meta.type), path("${meta.sample_id}.fastq.gz")
-      tuple val(meta.sample_id), path("${meta.sample_id}.stats"), emit: fastqstats
+      tuple val(meta.sample_id), path("${meta.sample_id}.stats"), emit: stats
     shell:
     """
     fastcat -s ${meta.sample_id} -r ${meta.sample_id}.stats -x ${directory} > ${meta.sample_id}.fastq
@@ -32,83 +33,107 @@ process concatenateReads {
     """
 }
 
-process alignment {
-  label params.process_label
-  cpus params.map_threads
-  publishDir "${params.out_dir}/BAM", mode: 'copy', pattern: "*"
-  input:
-    tuple val(sample_id), val(type), file(fastq)
-    file reference
-
-  output:
-    tuple val(sample_id), val(type), path("${sample_id}.bam"), path("${sample_id}.bam.bai")
-
-  """
-  minimap2 -t ${task.cpus} -ax map-ont ${reference} ${fastq} | samtools sort -o ${sample_id}.bam
-  samtools index ${sample_id}.bam
-  """
-}
-
-
-process callCNV {
-  label params.process_label
-  cpus 1
-  publishDir "${params.out_dir}/qdna_seq", mode: 'copy', pattern: "*"
-  input:
-    tuple val(sample_id), val(type), file(bam), file(bai)
-
-  output:
-    tuple val(sample_id), val(type), path("${sample_id}_combined.bed"), path("${sample_id}*"), path("${sample_id}_noise_plot.png"), path("${sample_id}_isobar_plot.png")
-
-  script:
-  """
-  run_qdnaseq.r --bam ${bam} --out_prefix ${sample_id} --binsize ${params.bin_size} --reference ${params.genome}
-  cut -f5 ${sample_id}_calls.bed | paste ${sample_id}_bins.bed - > ${sample_id}_combined.bed
-  """
-}
-
-process checkFASTA {
+process bamStats {
     label params.process_label
     cpus 1
     input:
-      file(reference)
+        tuple val(sample_id), val(type), path("${sample_id}.bam"), path("${sample_id}.bam.bai")
     output:
-      path("${reference}_genome.txt")
-      path("output.txt"), emit: genome_label optional true
-
-    script:
+        tuple val(sample_id), path("${sample_id}.stats"), emit: stats
+    shell:
     """
-    faSize -detailed -tab ${reference} > ${reference}_genome.txt
-    check_fasta.py --chr_counts ${reference}_genome.txt --genome ${params.genome} -o output.txt
+    bamstats --threads 3 ${sample_id}.bam > ${sample_id}.stats
     """
 }
 
-//
+process alignment {
+    label params.process_label
+    cpus params.map_threads
+    publishDir "${params.out_dir}/BAM", mode: 'copy', pattern: "*"
+    input:
+        tuple val(sample_id), val(type), file(fastq)
+        file reference
+    output:
+        tuple val(sample_id), val(type), path("${sample_id}.bam")
+    script:
+    """
+    minimap2 -t ${task.cpus} -ax map-ont ${reference} ${fastq} | samtools sort -o ${sample_id}.bam
+    """
+}
+
+process samtoolsIndex {
+    label params.process_label
+    input:
+        tuple val(sample_id), val(type), path("${sample_id}.bam")
+    output:
+        tuple val(sample_id), val(type), path("${sample_id}.bam"), path("${sample_id}.bam.bai")
+    script:
+    """
+    samtools index ${sample_id}.bam
+    """
+}
+
+process callCNV {
+    label params.process_label
+    cpus 1
+    publishDir "${params.out_dir}/qdna_seq", mode: 'copy', pattern: "*"
+    input:
+        tuple val(sample_id), val(type), file(bam), file(bai)
+    output:
+    tuple val(sample_id), val(type), path("${sample_id}_combined.bed"), path("${sample_id}*"), path("${sample_id}_noise_plot.png"), path("${sample_id}_isobar_plot.png")
+
+    script:
+    """
+    run_qdnaseq.r --bam ${bam} --out_prefix ${sample_id} --binsize ${params.bin_size} --reference ${params.genome}
+    cut -f5 ${sample_id}_calls.bed | paste ${sample_id}_bins.bed - > ${sample_id}_combined.bed
+    """
+}
+
+process checkGenome {
+    label params.process_label
+    cpus 1
+    input:
+        file(reference)
+    output:
+        path("${reference}_genome.txt")
+        path("output.txt"), emit: genome_label optional true
+     script:
+    if (params.fastq) 
+        """
+        faSize -detailed -tab ${reference} > ${reference}_genome.txt
+        check_fasta.py --chr_counts ${reference}_genome.txt --genome ${params.genome} -o output.txt
+        """
+    else if(params.bam)
+        """
+        samtools idxstats ${reference} > ${reference}_genome.txt
+        check_fasta.py --chr_counts ${reference}_genome.txt --genome ${params.genome} -o output.txt
+        """
+}
 
 process makeReport {
-  label params.process_label
-  cpus 1
-  input:
-    tuple val(sample_id), path(read_stats), val(type), path(cnv_calls), val(cnv_files), path(noise_plot), path(isobar_plot)
-    path "versions/*"
-    path "params.json"
-  output:
-    path("${sample_id}_wf-cnv-report.html")
-  script:
-  """
-  cnv_plot.py \
-    -q ${cnv_calls} \
-    -o ${sample_id}_wf-cnv-report.html \
-    --read_stats ${read_stats}\
-    --params params.json \
-    --versions versions \
-    --bin_size ${params.bin_size} \
-    --genome ${params.genome} \
-    --sample_id ${sample_id} \
-    --noise_plot ${noise_plot} \
-    --isobar_plot ${isobar_plot}
-  """
+    label params.process_label
+    cpus 1
+    input:
+        tuple val(sample_id), path(read_stats), val(type), path(cnv_calls), val(cnv_files), path(noise_plot), path(isobar_plot)
+        path "versions/*"
+        path "params.json"
+    output:
+        path("${sample_id}_wf-cnv-report.html")
 
+    script:
+    """
+    cnv_plot.py \
+        -q ${cnv_calls} \
+        -o ${sample_id}_wf-cnv-report.html \
+        --read_stats ${read_stats}\
+        --params params.json \
+        --versions versions \
+        --bin_size ${params.bin_size} \
+        --genome ${params.genome} \
+        --sample_id ${sample_id} \
+        --noise_plot ${noise_plot} \
+        --isobar_plot ${isobar_plot}
+    """
 }
 
 process getVersions {
@@ -116,6 +141,7 @@ process getVersions {
     cpus 1
     output:
         path "versions.txt"
+
     script:
     """
     python -c "import pysam; print(f'pysam,{pysam.__version__}')" >> versions.txt
@@ -126,7 +152,6 @@ process getVersions {
     R --slave -e 'packageVersion("QDNAseq")' | cut -d\\' -f2 | sed 's/^/QDNAseq,/' >> versions.txt
     """
 }
-
 
 process getParams {
     label params.process_label
@@ -141,6 +166,17 @@ process getParams {
     """
 }
 
+process samtools_index {
+    label params.process_label
+    input:
+        path(bam)
+    output:
+        path("${bam}.bai")
+    script:
+    """
+    samtools index $bam
+    """
+}
 
 // See https://github.com/nextflow-io/nextflow/issues/1636
 // This is the only way to publish files from a workflow whilst
@@ -166,21 +202,43 @@ workflow pipeline {
         reference
     main:
 
-        genome = checkFASTA(reference)
-
-        genome_match_channel = genome.genome_label.ifEmpty{exit 1, log.error('Reference FASTA and selected genome do not match')}
-
         software_versions = getVersions()
         workflow_params = getParams()
 
-        sample_fastqs = concatenateReads(reads, genome.genome_label)
+        if (params.fastq) {
 
-        alignment = alignment(sample_fastqs[0], reference)
+            genome = checkGenome(reference) 
+            genome_match_channel = genome.genome_label.ifEmpty{exit 1, log.error('Reference FASTA and selected genome do not match')}
+            sample_fastqs = concatenateReads(reads, genome.genome_label) 
+            stats = sample_fastqs.stats
+            alignment = alignment(sample_fastqs[0], reference) 
+            bam_for_cnv = samtoolsIndex(alignment)
 
-        cnvs = callCNV(alignment)
+        } else if (params.bam) {
 
-        join_ch = sample_fastqs.fastqstats.join(cnvs.groupTuple())
+            bam_file = Channel.fromPath(params.bam) 
+            bam_idx_fp = params.bam + ".bai" 
+            sample_details = reads.map{it -> tuple(it[1].sample_id, it[1].type)}.flatten()
+            
+            if(file(bam_idx_fp).exists()) {
 
+                bam_idx_file = Channel.fromPath(bam_idx_fp)
+                bam_for_cnv = sample_details.concat(bam_file, bam_idx_file).collate(4)
+                
+            } else {
+                
+                bam_channel = sample_details.concat(bam_file).collate(3)
+                bam_for_cnv = samtoolsIndex(bam_channel) 
+
+            }
+
+            genome = checkGenome(bam_file)
+            genome_match_channel = genome.genome_label.ifEmpty{exit 1, log.error('Reference used to produce BAM and selected genome do not match')}
+            stats = bamStats(bam_for_cnv)
+        }
+        
+        cnvs = callCNV(bam_for_cnv) 
+        join_ch = stats.join(cnvs.groupTuple())
         report = makeReport(join_ch, software_versions.collect(), workflow_params)
 
     emit:
@@ -199,35 +257,63 @@ valid_genomes = ["hg19", "hg38"]
 
 workflow {
 
+    if (params.bam && params.fastq) {
+        log.error "Please choose only one of --fastq or --bam"
+        exit 1
+    }
+
     if (params.disable_ping == false) {
         Pinguscript.ping_post(workflow, "start", "none", params.out_dir, params)
     }
 
-     if (workflow.profile == "conda") {
-       log.error "conda is not supported by this workflow"
-       exit 1
-     }
+    if (workflow.profile == "conda") {
+        log.error "conda is not supported by this workflow"
+        exit 1
+    }
 
     if (!valid_bin_sizes.any { it == params.bin_size}) {
-      log.error "`--bin-size` should be one of: $valid_bin_sizes"
-      exit 1
+        log.error "`--bin-size` should be one of: $valid_bin_sizes"
+        exit 1
     }
 
     if (!valid_genomes.any { it == params.genome}) {
-     log.error "`--genome` should be one of: $valid_genomes"
-     exit 1
-   }
-
-    samples = fastq_ingress([
-        "input":params.fastq,
-        "sample":params.sample,
-        "sample_sheet":params.sample_sheet])
-
-    if (params.reference) {
-      reference_fasta = file(params.reference, checkIfExists: true)
-    } else {
-      exit 1, 'Fasta file not specified!'
+        log.error "`--genome` should be one of: $valid_genomes"
+        exit 1
     }
+
+    if (params.fastq != null) {
+        
+        // Reference file required when using FASTQ
+        // reference is determined from BAM header when using BAM
+        if (params.reference) {
+
+            reference_fasta = file(params.reference, checkIfExists: true)
+
+        } else {
+            
+            log.error "Reference file not specified!"
+            exit 1
+
+        }
+
+        samples = fastq_ingress([
+          "input": params.fastq,
+          "sample": params.sample,
+          "sample_sheet": params.sample_sheet])
+
+    
+    } else if (params.bam != null) {
+
+        reference_fasta = null
+
+        samples = sample_ingress([
+          "input": params.bam,
+          "sample": params.sample,
+          "sample_sheet": params.sample_sheet,
+          "input_type": "BAM"])
+
+    }
+
 
     pipeline(samples, reference_fasta)
     output(pipeline.out.results)
