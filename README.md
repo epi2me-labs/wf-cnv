@@ -1,15 +1,15 @@
 # wf-cnv
 
-This repository contains a [Nextflow](https://www.nextflow.io/) workflow for carrying out copy number analysis, using a read depth method implemented by the R package QDNAseq. The input to the workflow is sequence data in FASTQ format, and the output per sample is an HTML report containing chromosome copy summary, ideoplot, plot of read counts per bin, links to genes in detected CNVs, and QC data. The workflow also produces read statistics, a BAM alignment file, BED files of both raw and normalised read counts, and a VCF file.
+This repository contains a [Nextflow](https://www.nextflow.io/) workflow for carrying out copy number analysis, using a read depth method implemented by the R package QDNAseq. The input to the workflow is either sequence data in FASTQ or BAM format, and the output per sample is an HTML report containing chromosome copy summary, ideoplot, plot of read counts per bin, links to genes in detected CNVs, and QC data. The workflow also produces read statistics, a BAM alignment file (if FASTQ was provided as input), BED files of both raw and normalised read counts, and a VCF file.
 
 Please note, currently CNV calling is restricted to human genome builds hg19 and hg38. For more information about the workflow, please see [this](https://labs.epi2me.io/copy-number-calling/) EPI2ME labs blog post.
 ## Introduction
 
-The workflow takes FASTQ sequence data, aligns to a reference genome, and uses the R package QDNAseq to call copy number aberrations.
+The workflow takes BAM or FASTQ data, aligns to a reference genome (if FASTQ files are supplied), and uses the R package QDNAseq to call copy number aberrations.
 
 Best practices for human copy number calling are actively being investigated by the ONT applications team, and this workflow puts some of that work into something that can be easily used by our community.
 
-wf-cnv also utilises our new reporting and plotting package [ezcharts](https://github.com/epi2me-labs/ezcharts). This uses python [dominate](https://github.com/Knio/dominate) and an apache [echart](https://echarts.apache.org/en/index.html) API to allow us to make modern, responsive layouts and plots with relative ease.
+wf-cnv also utilises our new reporting and plotting package [ezcharts](https://github.com/epi2me-labs/ezcharts). This uses Python [dominate](https://github.com/Knio/dominate) and an Apache [echart](https://echarts.apache.org/en/index.html) API to allow us to make modern, responsive layouts and plots with relative ease.
 ## Quickstart
 
 The workflow uses [Nextflow](https://www.nextflow.io/) to manage compute and
@@ -20,7 +20,7 @@ The workflow can currently be run using either [Docker](https://www.docker.com/p
 
 
 It is not required to clone or download the git repository in order to run the workflow.
-For more information on running EPI2ME Labs workflows [visit out website](https://labs.epi2me.io/wfindex).
+For more information on running EPI2ME Labs workflows [visit our website](https://labs.epi2me.io/wfindex).
 
 **Workflow options**
 
@@ -32,7 +32,13 @@ nextflow run epi2me-labs/wf-cnv --help
 
 to see the options for the workflow.
 
-Example command:
+Example command (BAM):
+
+```
+nextflow run epi2me-labs/wf-cnv --bam <PATH_TO_BAM> --genome <hg19|hg38> --bin_size <BIN_SIZE>
+```
+
+Example command (FASTQ):
 
 ```
 nextflow run epi2me-labs/wf-cnv --fastq <PATH_TO_FASTQS> --fasta <PATH_TO_REFERENCE> --genome <hg19|hg38> --bin_size <BIN_SIZE>
@@ -52,8 +58,8 @@ The primary outputs of the workflow include, per sample:
 
 * `<SAMPLE_NAME>_wf-cnv-report.html`: HTML CNV report containing chromosome copy summary, ideoplot, plot of read counts per bin, links to genes in detected CNVs, and QC data: read length histogram, noise plot (noise as a function of sequence depth) and isobar plot (median read counts per bin shown as a function of GC content and mappability)
 * `<SAMPLE_NAME>.stats`: Read stats
-* `BAM/<SAMPLE_NAME>.bam`: Alignment of reads to reference
-* `BAM/<SAMPLE_NAME>.bam.bai`: BAM index
+* `BAM/<SAMPLE_NAME>.bam`: Alignment of reads to reference (FASTQ input)
+* `BAM/<SAMPLE_NAME>.bam.bai`: BAM index (FASTQ input)
 * `qdna_seq/<SAMPLE_NAME>_plots.pdf`: QDNAseq-generated plots
 * `qdna_seq/<SAMPLE_NAME>_raw_bins.bed`: BED file of raw read counts per bin
 * `qdna_seq/<SAMPLE_NAME>_bins.bed`: BED file of corrected, normalised, and smoothed read counts per bin
