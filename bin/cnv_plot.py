@@ -11,6 +11,7 @@ from ezcharts.components.theme import LAB_head_resources
 from ezcharts.layout.snippets import DataTable
 from ezcharts.layout.snippets import Stats
 from ezcharts.plots import Plot, util
+from ezcharts.plots.distribution import histplot
 import ezcharts.plots.ideogram as ideo
 import pandas as pd
 from pkg_resources import resource_filename
@@ -177,29 +178,29 @@ def call_genetic_sex(chr_calls):
 
 
 def read_length_plot(read_lengths):
-    """Make a plot of read lengths."""
-    histogram = pd.cut(
-        read_lengths['read_length'],
-        [100, 300, 500, 1000, 5000, 10000, 50000]).value_counts().sort_index()
+    """Make a histogram of read lengths."""
+    histogram_data = read_lengths['read_length'].values
 
-    plt = Plot()
+    plt = histplot(data=histogram_data, binwidth=100)
 
-    plt.xAxis = dict(
-        type='category',
-        axisLabel={'rotate': '45'},
-        data=[
-            {'value': f"{row[0].left}-{row[0].right}bp"}
-            for row in histogram.iteritems()])
+    xaxis = list()
+    xaxis.append({
+        'name': "Read length",
+        'nameGap': '30',
+        'nameTextStyle': {'fontSize': '16', 'fontStyle': 'bold'},
+        'nameLocation': 'middle'
+    })
 
-    plt.yAxis = dict(
-        type='value'
-    )
+    yaxis = list()
+    yaxis.append({
+        'name': "Number of reads",
+        'nameGap': '60',
+        'nameTextStyle': {'fontSize': '16', 'fontStyle': 'bold'},
+        'nameLocation': 'middle'
+    })
 
-    plt.add_series(dict(
-        type='bar',
-        data=[{'value': row[1]} for row in histogram.iteritems()],
-        itemStyle={'color': Colors.cerulean},
-    ))
+    plt.xAxis = xaxis
+    plt.yAxis = yaxis
 
     return plt
 
