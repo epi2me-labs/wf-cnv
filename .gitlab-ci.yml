@@ -4,13 +4,37 @@ include:
       file: "wf-containers.yaml"
 
 variables:
-    NF_WORKFLOW_OPTS: "--fastq test_data/fastq/barcode01/reads.fastq.gz --reference test_data/fasta/chr21.fa.gz --genome hg38 --bin_size 500 --map_threads 4"
-    NF_IGNORE_PROCESSES: "bamStats,callCNV_bam,samtools_index"
+    NF_BEFORE_SCRIPT: "wget -O wf-cnv-demo.tar.gz https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-cnv/wf-cnv-demo.tar.gz && tar -xzvf wf-cnv-demo.tar.gz"
+    NF_WORKFLOW_OPTS: "--fastq wf-cnv-demo/fastq/barcode01/reads.fastq.gz --reference wf-cnv-demo/reference/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz --genome hg38 --bin_size 500"
+    NF_IGNORE_PROCESSES: "bamStats"
     CI_FLAVOUR: "new"
-
+    
 conda-run:
     stage: post-test
     script:
       - echo "conda disabled for wf-cnv"
     rules:
       - if: ($CI_FLAVOUR == "classic" && $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "dev-template")
+
+docker-run:
+    artifacts:
+        when: always
+        exclude:
+          - ${CI_PROJECT_NAME}/workspace/**/*
+    parallel:
+        matrix:
+            - MATRIX_NAME: ["fastq-input", "bam-input"]
+    rules:
+        - if: ($CI_COMMIT_BRANCH == null || $CI_COMMIT_BRANCH == "dev-template")
+          when: never
+        - if: $MATRIX_NAME == "fastq-input"
+          variables:
+              NF_BEFORE_SCRIPT: "wget -O wf-cnv-demo.tar.gz https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-cnv/wf-cnv-demo.tar.gz && tar -xzvf wf-cnv-demo.tar.gz"
+              NF_WORKFLOW_OPTS: "--fastq wf-cnv-demo/fastq/barcode01/reads.fastq.gz --reference wf-cnv-demo/reference/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz --genome hg38 --bin_size 500"
+              NF_IGNORE_PROCESSES: "bamStats"
+        
+        - if: ($MATRIX_NAME == "bam-input")
+          variables:
+              NF_BEFORE_SCRIPT: "wget -O wf-cnv-bam-demo.tar.gz https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-cnv/wf-cnv-bam-demo.tar.gz && tar -xzvf wf-cnv-bam-demo.tar.gz"
+              NF_WORKFLOW_OPTS: "--bam wf-cnv-bam/sample.bam --genome hg38 --bin_size 500"
+              NF_IGNORE_PROCESSES: "concatenateReads,alignment,samtoolsIndex"
