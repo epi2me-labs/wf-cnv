@@ -118,13 +118,13 @@ process makeReport {
         path "versions/*"
         path "params.json"
     output:
-        path("${sample_id}_wf-cnv-report.html")
+        path("wf-cnv-report.html")
 
     script:
     """
     cnv_plot.py \
         -q ${cnv_calls} \
-        -o ${sample_id}_wf-cnv-report.html \
+        -o wf-cnv-report.html \
         --read_stats ${read_stats}\
         --params params.json \
         --versions versions \
@@ -163,18 +163,6 @@ process getParams {
     """
     # Output nextflow params object to JSON
     echo '$paramsJSON' > params.json
-    """
-}
-
-process samtools_index {
-    label params.process_label
-    input:
-        path(bam)
-    output:
-        path("${bam}.bai")
-    script:
-    """
-    samtools index $bam
     """
 }
 
