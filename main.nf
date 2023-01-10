@@ -49,6 +49,7 @@ process bamStats {
 process alignment {
     label params.process_label
     cpus params.map_threads
+    
     publishDir "${params.out_dir}/BAM", mode: 'copy', pattern: "*"
     input:
         tuple val(sample_id), val(type), file(fastq)
@@ -79,17 +80,18 @@ process callCNV {
     publishDir "${params.out_dir}/qdna_seq", mode: 'copy', pattern: "*"
     input:
         tuple val(sample_id), val(type), file(bam), file(bai)
+        val(genome_build)
     output:
     tuple val(sample_id), val(type), path("${sample_id}_combined.bed"), path("${sample_id}*"), path("${sample_id}_noise_plot.png"), path("${sample_id}_isobar_plot.png")
 
     script:
     """
-    run_qdnaseq.r --bam ${bam} --out_prefix ${sample_id} --binsize ${params.bin_size} --reference ${params.genome}
+    run_qdnaseq.r --bam ${bam} --out_prefix ${sample_id} --binsize ${params.bin_size} --reference ${genome_build}
     cut -f5 ${sample_id}_calls.bed | paste ${sample_id}_bins.bed - > ${sample_id}_combined.bed
     """
 }
 
-process checkGenome {
+process getGenome {
     label params.process_label
     cpus 1
     input:
@@ -97,18 +99,22 @@ process checkGenome {
     output:
         path("${reference}_genome.txt")
         path("output.txt"), emit: genome_label optional true
+        env genome_string, emit: genome_build optional true
      script:
     if (params.fastq) 
         """
         faSize -detailed -tab ${reference} > ${reference}_genome.txt
-        check_fasta.py --chr_counts ${reference}_genome.txt --genome ${params.genome} -o output.txt
+        get_genome.py --chr_counts ${reference}_genome.txt -o output.txt
+        genome_string=`cat output.txt`
         """
     else if(params.bam)
         """
         samtools idxstats ${reference} > ${reference}_genome.txt
-        check_fasta.py --chr_counts ${reference}_genome.txt --genome ${params.genome} -o output.txt
+        get_genome.py --chr_counts ${reference}_genome.txt -o output.txt
+        genome_string=`cat output.txt`
         """
 }
+
 
 process makeReport {
     label params.process_label
@@ -117,6 +123,7 @@ process makeReport {
         tuple val(sample_id), path(read_stats), val(type), path(cnv_calls), val(cnv_files), path(noise_plot), path(isobar_plot)
         path "versions/*"
         path "params.json"
+        val genome_build
     output:
         path("wf-cnv-report.html")
 
@@ -129,7 +136,7 @@ process makeReport {
         --params params.json \
         --versions versions \
         --bin_size ${params.bin_size} \
-        --genome ${params.genome} \
+        --genome ${genome_build} \
         --sample_id ${sample_id} \
         --noise_plot ${noise_plot} \
         --isobar_plot ${isobar_plot}
@@ -195,8 +202,9 @@ workflow pipeline {
 
         if (params.fastq) {
 
-            genome = checkGenome(reference) 
-            genome_match_channel = genome.genome_label.ifEmpty{exit 1, log.error('Reference FASTA and selected genome do not match')}
+            genome = getGenome(reference)
+            //empty genome.genome_build means chromosome sizes didn't match to either hg19 or hg38, exit
+            genome_match_channel = genome.genome_build.ifEmpty{exit 1, log.error('The genome build detected is not compatible with this workflow. Plesae check the reference sequence and try again.')}
             sample_fastqs = concatenateReads(reads, genome.genome_label) 
             stats = sample_fastqs.stats
             alignment = alignment(sample_fastqs[0], reference) 
@@ -220,14 +228,15 @@ workflow pipeline {
 
             }
 
-            genome = checkGenome(bam_file)
-            genome_match_channel = genome.genome_label.ifEmpty{exit 1, log.error('Reference used to produce BAM and selected genome do not match')}
+            genome = getGenome(bam_file)
+            genome_match_channel = genome.genome_build.ifEmpty{exit 1, log.error('The genome build detected is not compatible with this workflow. Plesae check the reference sequence and try again.')}
             stats = bamStats(bam_for_cnv)
         }
         
-        cnvs = callCNV(bam_for_cnv) 
+        cnvs = callCNV(bam_for_cnv, genome.genome_build) 
         join_ch = stats.join(cnvs.groupTuple())
-        report = makeReport(join_ch, software_versions.collect(), workflow_params)
+        report = makeReport(join_ch, software_versions.collect(), workflow_params, genome.genome_build)
+
 
     emit:
         results = report.concat(workflow_params)
@@ -240,8 +249,6 @@ workflow pipeline {
 WorkflowMain.initialise(workflow, params, log)
 
 valid_bin_sizes = [1, 5, 10, 15, 30, 50, 100, 500, 1000]
-valid_genomes = ["hg19", "hg38"]
-
 
 workflow {
 
@@ -261,11 +268,6 @@ workflow {
 
     if (!valid_bin_sizes.any { it == params.bin_size}) {
         log.error "`--bin-size` should be one of: $valid_bin_sizes"
-        exit 1
-    }
-
-    if (!valid_genomes.any { it == params.genome}) {
-        log.error "`--genome` should be one of: $valid_genomes"
         exit 1
     }
 
