@@ -35,13 +35,13 @@ to see the options for the workflow.
 Example command (BAM):
 
 ```
-nextflow run epi2me-labs/wf-cnv --bam <PATH_TO_BAM> --genome <hg19|hg38> --bin_size <BIN_SIZE>
+nextflow run epi2me-labs/wf-cnv --bam <PATH_TO_BAM> --bin_size <BIN_SIZE>
 ```
 
 Example command (FASTQ):
 
 ```
-nextflow run epi2me-labs/wf-cnv --fastq <PATH_TO_FASTQS> --fasta <PATH_TO_REFERENCE> --genome <hg19|hg38> --bin_size <BIN_SIZE>
+nextflow run epi2me-labs/wf-cnv --fastq <PATH_TO_FASTQS> --reference <PATH_TO_REFERENCE> --bin_size <BIN_SIZE>
 ```
 
 The FASTQs for three test samples are available [here](https://github.com/epi2me-labs/wf-cnv/tree/master/test_data/fastq) and can be used with the the accompanying sample sheet from [here](https://github.com/epi2me-labs/wf-cnv/blob/master/test_data/sample_sheet.csv).
@@ -49,7 +49,7 @@ The FASTQs for three test samples are available [here](https://github.com/epi2me
 Example command with test data:
 
 ```
-nextflow run epi2me-labs/wf-cnv --fastq <PATH_TO_DOWNLOADED_FASTQ> --sample_sheet <PATH_TO_DOWNLOADED_SAMPLE_SHEET> --fasta /path/to/hg38.fa.gz --genome hg38 --bin_size 500
+nextflow run epi2me-labs/wf-cnv --fastq <PATH_TO_DOWNLOADED_FASTQ> --sample_sheet <PATH_TO_DOWNLOADED_SAMPLE_SHEET> --reference /path/to/hg38.fa.gz --bin_size 500
 ```
 
 **Workflow outputs**

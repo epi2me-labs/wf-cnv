@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 ### Changed
+- --genome parameter no longer required (determined from reference or BAM)
 - Updated CI command to produce improved report
 - Report updated to use histogram function from ezcharts
 

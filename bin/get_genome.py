@@ -95,10 +95,6 @@ def main():
         '--chr_counts', required=True, dest="chr_counts",
         help="Output from samtools faidx")
     parser.add_argument(
-        '--genome', required=True, dest="user_genome",
-        help="User supplied genome label"
-    )
-    parser.add_argument(
             '-o', '--output', dest="output",
             help="Output genome")
     args = parser.parse_args()
@@ -106,9 +102,8 @@ def main():
     all_sizes = chromosome_sizes(args.chr_counts)
 
     genome = get_genome(all_sizes)
-    if genome == args.user_genome:
-        result = open(args.output, 'w')
-        result.write(genome)
+    result = open(args.output, 'w')
+    result.write(genome)
 
 
 if __name__ == '__main__':

@@ -5,7 +5,7 @@ include:
 
 variables:
     NF_BEFORE_SCRIPT: "wget -O wf-cnv-demo.tar.gz https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-cnv/wf-cnv-demo.tar.gz && tar -xzvf wf-cnv-demo.tar.gz"
-    NF_WORKFLOW_OPTS: "--fastq wf-cnv-demo/fastq/barcode01/reads.fastq.gz --reference wf-cnv-demo/reference/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz --genome hg38 --bin_size 500"
+    NF_WORKFLOW_OPTS: "--fastq wf-cnv-demo/fastq/barcode01/reads.fastq.gz --reference wf-cnv-demo/reference/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz --bin_size 500"
     NF_IGNORE_PROCESSES: "bamStats"
     CI_FLAVOUR: "new"
     
@@ -30,11 +30,11 @@ docker-run:
         - if: $MATRIX_NAME == "fastq-input"
           variables:
               NF_BEFORE_SCRIPT: "wget -O wf-cnv-demo.tar.gz https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-cnv/wf-cnv-demo.tar.gz && tar -xzvf wf-cnv-demo.tar.gz"
-              NF_WORKFLOW_OPTS: "--fastq wf-cnv-demo/fastq/barcode01/reads.fastq.gz --reference wf-cnv-demo/reference/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz --genome hg38 --bin_size 500"
+              NF_WORKFLOW_OPTS: "--fastq wf-cnv-demo/fastq/barcode01/reads.fastq.gz --reference wf-cnv-demo/reference/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz --bin_size 500"
               NF_IGNORE_PROCESSES: "bamStats"
         
         - if: ($MATRIX_NAME == "bam-input")
           variables:
               NF_BEFORE_SCRIPT: "wget -O wf-cnv-bam-demo.tar.gz https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-cnv/wf-cnv-bam-demo.tar.gz && tar -xzvf wf-cnv-bam-demo.tar.gz"
-              NF_WORKFLOW_OPTS: "--bam wf-cnv-bam/sample.bam --genome hg38 --bin_size 500"
+              NF_WORKFLOW_OPTS: "--bam wf-cnv-bam/sample.bam --bin_size 500"
               NF_IGNORE_PROCESSES: "concatenateReads,alignment,samtoolsIndex"

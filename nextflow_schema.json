@@ -31,16 +31,6 @@
                     "format": "file-path",
                     "help_text": "Full path to a FASTA reference file to use for mapping. This is required when using a FASTQ file."
                 },
-                "genome": {
-                    "type": "string",
-                    "description": "Genome build.",
-                    "default": "hg38",
-                    "help_text": "Genome build version, either hg19 or hg38. This is used by QDNAseq to load the correct bin annotations.",
-                    "enum": [
-                        "hg19",
-                        "hg38"
-                    ]
-                },
                 "bin_size": {
                     "type": "integer",
                     "default": 500,
