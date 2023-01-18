@@ -104,13 +104,13 @@ process getGenome {
     if (params.fastq) 
         """
         faSize -detailed -tab ${reference} > ${reference}_genome.txt
-        get_genome.py --chr_counts ${reference}_genome.txt -o output.txt
+        workflow-glue get_genome --chr_counts ${reference}_genome.txt -o output.txt
         genome_string=`cat output.txt`
         """
     else if(params.bam)
         """
         samtools idxstats ${reference} > ${reference}_genome.txt
-        get_genome.py --chr_counts ${reference}_genome.txt -o output.txt
+        workflow-glue get_genome --chr_counts ${reference}_genome.txt -o output.txt
         genome_string=`cat output.txt`
         """
 }
@@ -129,7 +129,7 @@ process makeReport {
 
     script:
     """
-    cnv_plot.py \
+    workflow-glue cnv_plot \
         -q ${cnv_calls} \
         -o wf-cnv-report.html \
         --read_stats ${read_stats}\

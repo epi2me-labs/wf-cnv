@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """Check reference FASTA and return genome build based on chromosome sizes."""
 
-import argparse
-
+from .util import wf_parser  # noqa: ABS101
 
 CHROMOSOME_SIZES = {
     'hg19': {
@@ -88,17 +87,8 @@ def get_genome(sizes):
     return genome
 
 
-def main():
+def main(args):
     """Run entry point."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--chr_counts', required=True, dest="chr_counts",
-        help="Output from samtools faidx")
-    parser.add_argument(
-            '-o', '--output', dest="output",
-            help="Output genome")
-    args = parser.parse_args()
-
     all_sizes = chromosome_sizes(args.chr_counts)
 
     genome = get_genome(all_sizes)
@@ -106,5 +96,18 @@ def main():
     result.write(genome)
 
 
-if __name__ == '__main__':
-    main()
+def argparser():
+    """Argument parser for entrypoint."""
+    parser = wf_parser("get_genome")
+    parser.add_argument(
+        '--chr_counts', required=True, dest="chr_counts",
+        help="Output from samtools faidx")
+    parser.add_argument(
+        '-o', '--output', dest="output",
+        help="Output genome")
+    return parser
+
+
+if __name__ == "__main__":
+    args = argparser().parse_args()
+    main(args)
