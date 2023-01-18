@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """Plot CNVs."""
 
-import argparse
 import base64
 
 from dominate.tags import h6, img, p, span, table, tbody, td, th, thead, tr
@@ -15,6 +14,7 @@ from ezcharts.plots.distribution import histplot
 import ezcharts.plots.ideogram as ideo
 import pandas as pd
 from pkg_resources import resource_filename
+from .util import wf_parser  # noqa: ABS101
 
 # Setup simple globals
 WORKFLOW_NAME = 'wf-cnv'
@@ -67,9 +67,9 @@ KNOWN_CHROMOSOME_CONFIGURATIONS = {
 }
 
 
-def load_cmdline_params():
-    """Return an arg parser object from arguments."""
-    parser = argparse.ArgumentParser(description='''Process QDNAseq output''')
+def argparser():
+    """Argument parser for entrypoint."""
+    parser = wf_parser("cnv_plot")
     parser.add_argument(
         '-q', '--qdna_seq', required=True, dest="qdnaseq_results",
         help="Output from running QDNAseq")
@@ -529,10 +529,8 @@ def make_report(
     return report
 
 
-def main():
+def main(args):
     """Run the entry point."""
-    args = load_cmdline_params().parse_args()
-
     df_smoothed_read_counts, chr_calls = process_qdna(args.qdnaseq_results)
     genetic_sex = call_genetic_sex(chr_calls)
     read_lengths = process_fastcat(args.read_stats)
@@ -556,4 +554,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    args = argparser().parse_args()
+    main(args)
