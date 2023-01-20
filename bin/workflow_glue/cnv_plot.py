@@ -73,8 +73,6 @@ def argparser():
     parser.add_argument(
         '-q', '--qdna_seq', required=True, dest="qdnaseq_results",
         help="Output from running QDNAseq")
-    # parser.add_argument('-s', '--sample', required=True, dest="sample",
-    # help="Sample name")
     parser.add_argument(
         '-r', '--read_stats', required=True, dest="read_stats",
         help="Output from fastcat")
@@ -551,8 +549,3 @@ def main(args):
         args)
 
     report.write(args.output_report)
-
-
-if __name__ == "__main__":
-    args = argparser().parse_args()
-    main(args)

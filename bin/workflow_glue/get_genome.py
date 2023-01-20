@@ -106,8 +106,3 @@ def argparser():
         '-o', '--output', dest="output",
         help="Output genome")
     return parser
-
-
-if __name__ == "__main__":
-    args = argparser().parse_args()
-    main(args)
