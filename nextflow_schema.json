@@ -161,11 +161,6 @@
             "type": "string",
             "hidden": true
         },
-        "wfversion": {
-            "type": "string",
-            "default": "v0.0.7",
-            "hidden": true
-        },
         "monochrome_logs": {
             "type": "boolean"
         },
