@@ -4,3 +4,5 @@ template-workflow
 .*.swp
 .*.swo
 .DS_Store
+*.pyc
+*.pyo
