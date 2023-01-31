@@ -30,6 +30,8 @@ if (argv$cutoff %in% c('none','None','NONE')) {
     argv$cutoff <- as.numeric(as.character(argv$cutoff))
 }
 
+# prevent Error in getGlobalsAndPackages
+options(future.globals.maxSize = 1048576000)
 
 #Set-up fig outputs
 pdf_file <- paste(argv$out_prefix, 'plots.pdf', sep="_")
