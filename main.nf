@@ -88,6 +88,18 @@ process callCNV {
     """
     run_qdnaseq.r --bam ${bam} --out_prefix ${sample_id} --binsize ${params.bin_size} --reference ${genome_build}
     cut -f5 ${sample_id}_calls.bed | paste ${sample_id}_bins.bed - > ${sample_id}_combined.bed
+    check=`awk -F "\t" 'NF != 6' ${sample_id}_segs.seg`
+
+    if [ -n "\${check}" ]; then \
+        echo "vcf is malformed"; \
+        workflow-glue fix_vcf --vcf ${sample_id}_calls.vcf --fixed_vcf ${sample_id}_calls_fixed.vcf --sample_id ${sample_id}; \
+        workflow-glue fix_vcf --vcf ${sample_id}_segs.vcf --fixed_vcf ${sample_id}_segs_fixed.vcf --sample_id ${sample_id}; \
+
+        rm ${sample_id}_calls.vcf
+        mv ${sample_id}_calls_fixed.vcf ${sample_id}_calls.vcf
+        rm ${sample_id}_segs.vcf
+        mv ${sample_id}_segs_fixed.vcf ${sample_id}_segs.vcf
+    fi
     """
 }
 
