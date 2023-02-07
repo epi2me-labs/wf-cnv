@@ -264,6 +264,8 @@ valid_bin_sizes = [1, 5, 10, 15, 30, 50, 100, 500, 1000]
 
 workflow {
 
+    log.error "wf-cnv is now deprecated and will no longer receive updates, please use wf-human-variation"
+
     if (params.bam && params.fastq) {
         log.error "Please choose only one of --fastq or --bam"
         exit 1
@@ -324,6 +326,7 @@ workflow {
 if (params.disable_ping == false) {
     workflow.onComplete {
         Pinguscript.ping_post(workflow, "end", "none", params.out_dir, params)
+        log.error "wf-cnv is now deprecated and will no longer receive updates, please use wf-human-variation"
     }
 
     workflow.onError {
