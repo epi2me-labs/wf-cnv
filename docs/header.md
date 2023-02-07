@@ -1,3 +1,9 @@
+<img src="docs/assets/logo.png" alt="This Oxford Nanopore Technologies repo is deprecated." width="500" />
+
+# Deprecated
+wf-cnv was deprecated at version 0.0.9.
+The functionality of wf-cnv is now available in [wf-human-variation](https://github.com/epi2me-labs/wf-human-variation).
+
 # wf-cnv
 
 This repository contains a [Nextflow](https://www.nextflow.io/) workflow for carrying out copy number analysis, using a read depth method implemented by the R package QDNAseq. The input to the workflow is either sequence data in FASTQ or BAM format, and the output per sample is an HTML report containing chromosome copy summary, ideoplot, plot of read counts per bin, links to genes in detected CNVs, and QC data. The workflow also produces read statistics, a BAM alignment file (if FASTQ was provided as input), BED files of both raw and normalised read counts, and a VCF file.

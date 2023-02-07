@@ -33,6 +33,7 @@ def main(args):
     result.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t")
     result.write(args.sample_id+"\n")
 
+    # Remove the rogue 'x' that appears in the .seg file when only one CNV is called
     vcf_record.pop(0)
 
     result.write('\t'.join(vcf_record))
